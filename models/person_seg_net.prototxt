@@ -1,16 +1,42 @@
 name: "person_seg_net"
 
-input: "data"
-input_dim: 1
-input_dim: 3
-input_dim: 480 # This value will be defined at runtime
-input_dim: 640 # This value will be defined at runtime
+layer {
+  name: "data"
+  type: "Data"
+  transform_param {
+    mean_value: 103.939
+    mean_value: 116.779
+    mean_value: 123.68
+  }
+  data_param {
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
+    backend: LMDB
+    batch_size: 16
+  }
+  top: "data"
+}
 
-input: "label"
-input_dim: 1
-input_dim: 1
-input_dim: 480 # This value will be defined at runtime
-input_dim: 640 # This value will be defined at runtime
+layer {
+  name: "label"
+  type: "Data"
+  data_param {
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_label"
+    backend: LMDB
+    batch_size: 16
+  }
+  top: "label"
+}
+
+layer {
+  name: "data_raw"
+  type: "Data"
+  data_param {
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
+    backend: LMDB
+    batch_size: 16
+  }
+  top: "data_raw"
+}
 
 layer: {
   bottom: "data"
@@ -427,7 +453,7 @@ layer {
 layer {
   name: "conv1_1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "data_raw"
   top: "conv1_1"
   param {
     lr_mult: 0

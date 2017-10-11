@@ -95,6 +95,7 @@ def create_lmdb(coco_images_path, annot_file, lmdb_dir):
     label_lmdb = lmdb.open(label_lmdb_path, map_size=int(1e12))
     label_txn = label_lmdb.begin(write=True)
     sample_count = 0
+    total_count = len(images)
 
     for image in images:
         img_id = image['id']
@@ -127,13 +128,13 @@ def create_lmdb(coco_images_path, annot_file, lmdb_dir):
             label_txn.commit()
             data_txn = data_lmdb.begin(write=True)
             label_txn = label_lmdb.begin(write=True)
-            print('{:d} samples being processed.'.format(sample_count))
+            print('{:d}/{:d} samples being processed.'.format(sample_count, total_count))
 
     data_txn.commit()
     label_txn.commit()
     data_lmdb.close()
     label_lmdb.close()
-    print('Total {:d} samples beging processed.'.format(sample_count))
+    print('Total {:d}/{:d} samples beging processed.'.format(sample_count, total_count))
 
 
 if __name__ == '__main__':

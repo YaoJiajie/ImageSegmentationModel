@@ -1,11 +1,12 @@
 import caffe
 import sys
+import numpy as np
 
 
 def surgery(vgg16_prototxt, vgg_weights, open_pose_weights, person_seg_net_prototxt):
     caffe.set_mode_cpu()
     # vgg16_net = caffe.Net(vgg16_prototxt, vgg_weights, caffe.TEST)
-    person_seg_net = caffe.Net(person_seg_net_prototxt, open_pose_weights, caffe.TEST)
+    person_seg_net = caffe.Net(person_seg_net_prototxt, open_pose_weights, caffe.TRAIN)
 
     # copy weights
     # layer_names = ['conv1_1', 'conv1_2']
@@ -26,4 +27,3 @@ if __name__ == '__main__':
     open_pose_weights_path = sys.argv[3]
     seg_net_prototxt_path = sys.argv[4]
     surgery(vgg16_prototxt_path, vgg16_weights_path, open_pose_weights_path, seg_net_prototxt_path)
-

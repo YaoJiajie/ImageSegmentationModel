@@ -40,15 +40,18 @@ def predict(net, image):
 
     # seg = np.argmax(seg, 0)
     seg = np.squeeze(seg)
-    seg[seg > 0.5] = 1
-    seg[seg != 1] = 0
+    seg[seg > 0.5] = person_label
+    seg[seg != person_label] = 0
 
     seg = seg.astype(np.uint8)
+
     mask = to_original_scale(seg, (original_height, original_width))
     mask_color = np.zeros((original_height, original_width, 3), np.uint8)
     mask_color[mask == person_label] = [0, 255, 0]
 
-    image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5, mask_color[mask == person_label], 0.5, 0)
+    if np.count_nonzero(mask) > 0:
+        image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5, mask_color[mask == person_label], 0.5, 0)
+
     cv2.imshow('segmentation', image)
     cv2.waitKey()
     cv2.imwrite('segmentation.png', image)

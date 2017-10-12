@@ -11,7 +11,7 @@ layer {
   data_param {
     source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
     backend: LMDB
-    batch_size: 16
+    batch_size: 1
   }
   top: "data"
 }
@@ -22,7 +22,7 @@ layer {
   data_param {
     source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_label"
     backend: LMDB
-    batch_size: 16
+    batch_size: 1
   }
   top: "label"
 }
@@ -33,7 +33,7 @@ layer {
   data_param {
     source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
     backend: LMDB
-    batch_size: 16
+    batch_size: 1
   }
   top: "data_raw"
 }

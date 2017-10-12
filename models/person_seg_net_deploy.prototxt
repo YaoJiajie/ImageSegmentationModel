@@ -3472,7 +3472,8 @@ layer{
   }
 
   convolution_param {
-    num_output: 2
+    # num_output: 2
+    num_output: 1
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -3483,4 +3484,11 @@ layer{
       type: "constant"
     }
   }
+}
+
+layer {
+  name: "seg_out_sigmoid"
+  type: "Sigmoid"
+  bottom: "seg_out"
+  top: "seg_out"
 }

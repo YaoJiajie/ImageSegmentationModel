@@ -4,7 +4,7 @@ layer {
   name: "label"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_label"
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_train2017_label"
     backend: LMDB
     batch_size: 2
   }
@@ -15,7 +15,7 @@ layer {
   name: "data"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_train2017_data"
     backend: LMDB
     batch_size: 2
   }
@@ -3488,7 +3488,7 @@ layer{
   }
 
   convolution_param {
-    num_output: 2
+    num_output: 1
     pad: 1
     kernel_size: 3
     weight_filler {
@@ -3501,9 +3501,20 @@ layer{
   }
 }
 
+# layer {
+#  name: "loss"
+#  type: "SoftmaxWithLoss"
+#  bottom: "seg_out"
+#  bottom: "label"
+#  top: "loss"
+#  loss_param {
+#    normalize: true
+#  }
+#}
+
 layer {
   name: "loss"
-  type: "SoftmaxWithLoss"
+  type: "SigmoidCrossEntropyLoss"
   bottom: "seg_out"
   bottom: "label"
   top: "loss"

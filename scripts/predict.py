@@ -37,7 +37,12 @@ def predict(net, image):
     net.blobs['data'].data[...] = input_data
     output = net.forward()
     seg = output['seg_out'][0]
-    seg = np.argmax(seg, 0)
+
+    # seg = np.argmax(seg, 0)
+    seg = np.squeeze(seg)
+    seg[seg > 0.5] = 1
+    seg[seg != 1] = 0
+
     seg = seg.astype(np.uint8)
     mask = to_original_scale(seg, (original_height, original_width))
     mask_color = np.zeros((original_height, original_width, 3), np.uint8)

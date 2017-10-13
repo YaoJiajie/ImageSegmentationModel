@@ -40,15 +40,15 @@ def predict(net, image):
     output = net.forward()
     seg = output['seg_out'][0]
 
-    # display the pose heat map
-    pose_output = net.blobs['pose_output_8x'].data[0]
-    channels, _, _ = pose_output.shape
-    for ch in range(channels):
-        heat_map = pose_output[ch]
-        heat_map_normed = cv2.normalize(heat_map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-        heat_map_vis = heat_map_normed.astype(np.uint8)
-        cv2.imshow('heatmap', heat_map_vis)
-        cv2.waitKey()
+    # # display the pose heat map
+    # pose_output = net.blobs['pose_output_8x'].data[0]
+    # channels, _, _ = pose_output.shape
+    # for ch in range(channels):
+    #     heat_map = pose_output[ch]
+    #     heat_map_normed = cv2.normalize(heat_map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    #     heat_map_vis = heat_map_normed.astype(np.uint8)
+    #     cv2.imshow('heatmap', heat_map_vis)
+    #     cv2.waitKey()
 
     # seg = np.argmax(seg, 0)
     seg = np.squeeze(seg)

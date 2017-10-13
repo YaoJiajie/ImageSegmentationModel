@@ -1,6 +1,23 @@
 name: "person_seg_net"
 
 layer {
+  name: "data"
+  type: "Data"
+  data_param {
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_train2017_data"
+    backend: LMDB
+    batch_size: 2
+  }
+  transform_param {
+    scale: 0.00390625
+    mean_value: 127
+    mean_value: 127
+    mean_value: 127
+  }
+  top: "data"
+}
+
+layer {
   name: "label"
   type: "Data"
   data_param {
@@ -9,17 +26,6 @@ layer {
     batch_size: 2
   }
   top: "label"
-}
-
-layer {
-  name: "data"
-  type: "Data"
-  data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_train2017_data"
-    backend: LMDB
-    batch_size: 2
-  }
-  top: "data"
 }
 
 layer {
@@ -3088,6 +3094,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3111,6 +3118,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 512
+    group: 512
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3220,6 +3228,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3244,6 +3253,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 256
+    group: 256
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3352,6 +3362,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3375,6 +3386,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 128
+    group: 128
     pad: 1
     weight_filler: {
       type: "bilinear"

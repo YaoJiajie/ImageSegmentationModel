@@ -3072,6 +3072,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3095,6 +3096,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 512
+    group: 512
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3204,6 +3206,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3228,6 +3231,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 256
+    group: 256
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3336,6 +3340,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 57
+    group: 57
     pad: 1
     weight_filler: {
       type: "bilinear"
@@ -3359,6 +3364,7 @@ layer {
     kernel_size: 4
     stride: 2
     num_output: 128
+    group: 128
     pad: 1
     weight_filler: {
       type: "bilinear"

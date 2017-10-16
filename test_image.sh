@@ -1,7 +1,7 @@
 #!/bin/bash
 
-model=/home/jiajie/video_segment/models/person_seg_net_deploy.prototxt
-weights=/home/jiajie/video_segment/models/backup/person_seg_net_iter_20000.caffemodel
-image_path=$1
+model=$1
+weights=$2
+image_path=$3
 
 python scripts/predict.py ${model}  ${weights}  ${image_path}

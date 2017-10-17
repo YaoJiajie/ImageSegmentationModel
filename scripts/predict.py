@@ -33,7 +33,7 @@ def to_original_scale(seg, shape):
     return cv2.resize(roi, (w, h), interpolation=cv2.INTER_CUBIC)
 
 
-def predict(net, image):
+def predict(net, image, thresh=0.5):
     original_height, original_width, _ = image.shape
     input_data = convert(image)
     net.blobs['data'].data[...] = input_data
@@ -50,11 +50,9 @@ def predict(net, image):
     #     cv2.imshow('heatmap', heat_map_vis)
     #     cv2.waitKey()
 
-    # seg = np.argmax(seg, 0)
     seg = np.squeeze(seg)
-    seg[seg > 0.5] = person_label
+    seg[seg > thresh] = person_label
     seg[seg != person_label] = 0
-
     seg = seg.astype(np.uint8)
 
     mask = to_original_scale(seg, (original_height, original_width))
@@ -66,20 +64,66 @@ def predict(net, image):
 
     cv2.imshow('segmentation', image)
     cv2.waitKey()
-    cv2.imwrite('segmentation.png', image)
+
+
+def predict_2(pose_net, seg_net, image, thresh=0.5):
+    original_height, original_width, _ = image.shape
+    input_data = convert(image)
+
+    pose_net.blobs['data'].data[...] = input_data
+    pose_output = pose_net.forward()
+    pose_output = pose_output['pose_output']
+
+    seg_net.blobs['data'].data[...] = input_data
+    seg_net.blobs['pose_output'].data[...] = pose_output
+    output = seg_net.forward()
+    seg = output['seg_out'][0]
+
+    seg = np.squeeze(seg)
+    seg[seg > thresh] = person_label
+    seg[seg != person_label] = 0
+    seg = seg.astype(np.uint8)
+
+    mask = to_original_scale(seg, (original_height, original_width))
+    mask_color = np.zeros((original_height, original_width, 3), np.uint8)
+    mask_color[mask == person_label] = [0, 255, 0]
+
+    if np.count_nonzero(mask) > 0:
+        image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
+                                                      mask_color[mask == person_label], 0.5, 0)
+
+    cv2.imshow('segmentation', image)
+    cv2.waitKey()
 
 
 if __name__ == '__main__':
-    net_prototxt = sys.argv[1]
-    weights = sys.argv[2]
-    image_path = sys.argv[3]
-    gpu_id = int(sys.argv[4])
+    ver = sys.argv[1]
 
-    caffe.set_mode_gpu()
-    caffe.set_device(gpu_id)
-    caffe_net = caffe.Net(net_prototxt, weights, caffe.TEST)
-    img = cv2.imread(image_path)
-    # cv2.imshow('input', img)
-    # cv2.waitKey()
-    predict(caffe_net, img)
+    if ver == '1':
+        net_prototxt = sys.argv[2]
+        weights = sys.argv[3]
+        image_path = sys.argv[4]
+        gpu_id = int(sys.argv[5])
+        thresh = float(sys.argv[6])
 
+        caffe.set_mode_gpu()
+        caffe.set_device(gpu_id)
+        caffe_net = caffe.Net(net_prototxt, weights, caffe.TEST)
+        img = cv2.imread(image_path)
+        predict(caffe_net, img, thresh)
+
+    elif ver == '2':
+        pose_prototxt = sys.argv[2]
+        pose_weights = sys.argv[3]
+        seg_prototxt = sys.argv[4]
+        seg_weights = sys.argv[5]
+        image_path = sys.argv[6]
+        gpu_id = int(sys.argv[7])
+        thresh = float(sys.argv[8])
+
+        caffe.set_mode_gpu()
+        caffe.set_device(gpu_id)
+        pose_net = caffe.Net(pose_prototxt, pose_weights, caffe.TEST)
+        seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
+        img = cv2.imread(image_path)
+        predict_2(pose_net, seg_net, img, thresh)

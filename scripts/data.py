@@ -137,8 +137,47 @@ def create_lmdb(coco_images_path, annot_file, lmdb_dir):
     print('Total {:d}/{:d} samples beging processed.'.format(sample_count, total_count))
 
 
+def create_pose_lmdb(openpose_prototxt, openpose_weights, output_lmdb_path, sample_num):
+    caffe.set_mode_gpu()
+    caffe.set_device(1)
+    pose_net = caffe.Net(openpose_prototxt, openpose_weights, caffe.TEST)
+    count = 0
+    pose_lmdb = lmdb.open(output_lmdb_path, map_size=int(1e12))
+    pose_txn = pose_lmdb.begin(write=True)
+
+    while count < sample_num:
+        output = pose_net.forward()
+        pose_features = output['net_output']
+
+        for pose_feature in pose_features:
+            db_key = '{:012d}'.format(count)
+            datum = caffe.io.array_to_datum(pose_feature)
+            pose_txn.put(db_key, datum.SerializeToString())
+            count += 1
+
+            if count % 1000 == 0:
+                pose_txn.commit()
+                pose_txn = pose_lmdb.begin(write=True)
+                print('{:d}/{:d} samples being processed.'.format(count, sample_num))
+                sys.stdout.flush()
+
+            if count >= sample_num:
+                break
+
+        # print(pose_features.shape)
+        # # visualize the first image's first channel:
+        # pose_feature_vis = pose_features[0][0]
+        # pose_feature_vis = cv2.normalize(pose_feature_vis, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+        # pose_feature_vis = pose_feature_vis.astype(np.uint8)
+        # cv2.imshow('pose_feature', pose_feature_vis)
+        # cv2.waitKey()
+
+    pose_txn.commit()
+    pose_lmdb.close()
+    print('Total {:d}/{:d} samples beging processed.\n'.format(count, sample_num))
+
+
 if __name__ == '__main__':
-    coc_images_dir = sys.argv[1]
-    annot_file_path = sys.argv[2]
-    out_dir = sys.argv[3]
-    create_lmdb(coc_images_dir, annot_file_path, out_dir)
+    # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
+    create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 64115)
+

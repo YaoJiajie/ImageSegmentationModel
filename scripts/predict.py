@@ -73,9 +73,13 @@ if __name__ == '__main__':
     net_prototxt = sys.argv[1]
     weights = sys.argv[2]
     image_path = sys.argv[3]
+    gpu_id = int(sys.argv[4])
+
     caffe.set_mode_gpu()
+    caffe.set_device(gpu_id)
     caffe_net = caffe.Net(net_prototxt, weights, caffe.TEST)
     img = cv2.imread(image_path)
     # cv2.imshow('input', img)
     # cv2.waitKey()
     predict(caffe_net, img)
+

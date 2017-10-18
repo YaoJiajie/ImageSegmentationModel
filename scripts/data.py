@@ -6,7 +6,7 @@ from coco_api.pycocotools.coco import COCO
 from coco_api.pycocotools import mask as mask_utils
 import lmdb
 import caffe
-
+from caffe.proto import caffe_pb2
 
 coco_format = '{:012d}.jpg'
 person_label = 1
@@ -177,7 +177,56 @@ def create_pose_lmdb(openpose_prototxt, openpose_weights, output_lmdb_path, samp
     print('Total {:d}/{:d} samples beging processed.\n'.format(count, sample_num))
 
 
+def create_edge_lmdb(bgr_lmdb_path, output_lmdb_path):
+    bgr_lmdb = lmdb.open(bgr_lmdb_path)
+    bgr_txn = bgr_lmdb.begin()
+    bgr_cursor = bgr_txn.cursor()
+    datum = caffe_pb2.Datum()
+    count = 0
+
+    feature_lmdb = lmdb.open(output_lmdb_path, map_size=int(1e12))
+    feature_txn = feature_lmdb.begin(write=True)
+
+    for db_key, value in bgr_cursor:
+        datum.ParseFromString(value)
+        data = caffe.io.datum_to_array(datum)
+
+        im = data.astype(np.uint8)  # c * h * w
+        im = np.transpose(im, (1, 2, 0))
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+        grad_x = cv2.Sobel(im, cv2.CV_32F, 1, 0, None, 3)
+        grad_x = np.abs(grad_x)
+        grad_y = cv2.Sobel(im, cv2.CV_32F, 0, 1, None, 3)
+        grad_y = np.abs(grad_y)
+        total_grad = cv2.addWeighted(grad_x, 0.5, grad_y, 0.5, 0)
+        total_grad = cv2.normalize(total_grad, None, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX)
+        total_grad -= 0.5
+
+        # grad_vis = cv2.normalize(total_grad, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+        # grad_vis = grad_vis.astype(np.uint8)
+        # cv2.imshow('image', im)
+        # cv2.imshow('grad', grad_vis)
+        # cv2.waitKey()
+
+        total_grad = total_grad[np.newaxis, :, :]
+        feature_datum = caffe.io.array_to_datum(total_grad)
+        feature_txn.put(db_key, feature_datum.SerializeToString())
+        count += 1
+
+        if count % 1000 == 0:
+            feature_txn.commit()
+            feature_txn = feature_lmdb.begin(write=True)
+            print('{:d} samples being processed.'.format(count))
+            sys.stdout.flush()
+
+    feature_txn.commit()
+    feature_lmdb.close()
+    bgr_lmdb.close()
+    print('Total {:d} samples being processed.'.format(count))
+
+
 if __name__ == '__main__':
     # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
-    create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 64115)
-
+    # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 64115)
+    create_edge_lmdb(sys.argv[1], sys.argv[2])

@@ -70,9 +70,16 @@ def predict_2(pose_net, seg_net, image, thresh=0.5):
     original_height, original_width, _ = image.shape
     input_data = convert(image)
 
-    pose_net.blobs['data'].data[...] = input_data
+    pose_net.blobs['image'].data[...] = input_data
     pose_output = pose_net.forward()
-    pose_output = pose_output['pose_output']
+    pose_output = pose_output['net_output']
+
+    # sum all the pose channels and visualize
+    pose_output_sum = np.sum(pose_output[0], 0)
+    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    pose_output_sum = pose_output_sum.astype(np.uint8)
+    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
+    cv2.imshow('pose_output_sum', pose_output_sum)
 
     seg_net.blobs['data'].data[...] = input_data
     seg_net.blobs['pose_output'].data[...] = pose_output

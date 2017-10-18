@@ -4,6 +4,7 @@ from data import fit_size
 from data import input_height
 from data import input_width
 from data import person_label
+from data import get_normed_edge_feature
 import cv2
 import sys
 
@@ -103,6 +104,49 @@ def predict_2(pose_net, seg_net, image, thresh=0.5):
     cv2.waitKey()
 
 
+def predict_3(pose_net, seg_net, image, thresh=0.5):
+    original_height, original_width, _ = image.shape
+    input_data = convert(image)
+
+    fitsize_img = fit_size([image, ])[0]
+    cv2.imshow('fitsized_img', fitsize_img)
+    cv2.waitKey()
+    edge_feature = get_normed_edge_feature(fitsize_img)
+
+    pose_net.blobs['image'].data[...] = input_data
+    pose_output = pose_net.forward()
+    pose_output = pose_output['net_output']
+
+    # sum all the pose channels and visualize
+    pose_output_sum = np.sum(pose_output[0], 0)
+    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    pose_output_sum = pose_output_sum.astype(np.uint8)
+    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
+    cv2.imshow('pose_output_sum', pose_output_sum)
+
+    seg_net.blobs['data'].data[...] = input_data
+    seg_net.blobs['pose_output'].data[...] = pose_output
+    seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
+    output = seg_net.forward()
+    seg = output['seg_out'][0]
+
+    seg = np.squeeze(seg)
+    seg[seg > thresh] = person_label
+    seg[seg != person_label] = 0
+    seg = seg.astype(np.uint8)
+
+    mask = to_original_scale(seg, (original_height, original_width))
+    mask_color = np.zeros((original_height, original_width, 3), np.uint8)
+    mask_color[mask == person_label] = [0, 255, 0]
+
+    if np.count_nonzero(mask) > 0:
+        image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
+                                                      mask_color[mask == person_label], 0.5, 0)
+
+    cv2.imshow('segmentation', image)
+    cv2.waitKey()
+
+
 if __name__ == '__main__':
     ver = sys.argv[1]
 
@@ -119,7 +163,7 @@ if __name__ == '__main__':
         img = cv2.imread(image_path)
         predict(caffe_net, img, thresh)
 
-    elif ver == '2':
+    elif ver == '2' or ver == '3':
         pose_prototxt = sys.argv[2]
         pose_weights = sys.argv[3]
         seg_prototxt = sys.argv[4]
@@ -133,4 +177,9 @@ if __name__ == '__main__':
         pose_net = caffe.Net(pose_prototxt, pose_weights, caffe.TEST)
         seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
         img = cv2.imread(image_path)
-        predict_2(pose_net, seg_net, img, thresh)
+
+        if ver == '2':
+            predict_2(pose_net, seg_net, img, thresh)
+        else:
+            predict_3(pose_net, seg_net, img, thresh)
+

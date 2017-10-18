@@ -177,6 +177,18 @@ def create_pose_lmdb(openpose_prototxt, openpose_weights, output_lmdb_path, samp
     print('Total {:d}/{:d} samples beging processed.\n'.format(count, sample_num))
 
 
+def get_normed_edge_feature(im):
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    grad_x = cv2.Sobel(im, cv2.CV_32F, 1, 0, None, 3)
+    grad_x = np.abs(grad_x)
+    grad_y = cv2.Sobel(im, cv2.CV_32F, 0, 1, None, 3)
+    grad_y = np.abs(grad_y)
+    total_grad = cv2.addWeighted(grad_x, 0.5, grad_y, 0.5, 0)
+    total_grad = cv2.normalize(total_grad, None, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX)
+    total_grad -= 0.5
+    return total_grad
+
+
 def create_edge_lmdb(bgr_lmdb_path, output_lmdb_path):
     bgr_lmdb = lmdb.open(bgr_lmdb_path)
     bgr_txn = bgr_lmdb.begin()
@@ -193,15 +205,7 @@ def create_edge_lmdb(bgr_lmdb_path, output_lmdb_path):
 
         im = data.astype(np.uint8)  # c * h * w
         im = np.transpose(im, (1, 2, 0))
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-
-        grad_x = cv2.Sobel(im, cv2.CV_32F, 1, 0, None, 3)
-        grad_x = np.abs(grad_x)
-        grad_y = cv2.Sobel(im, cv2.CV_32F, 0, 1, None, 3)
-        grad_y = np.abs(grad_y)
-        total_grad = cv2.addWeighted(grad_x, 0.5, grad_y, 0.5, 0)
-        total_grad = cv2.normalize(total_grad, None, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX)
-        total_grad -= 0.5
+        total_grad = get_normed_edge_feature(im)
 
         # grad_vis = cv2.normalize(total_grad, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
         # grad_vis = grad_vis.astype(np.uint8)

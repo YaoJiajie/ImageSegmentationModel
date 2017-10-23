@@ -113,6 +113,11 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     cv2.waitKey()
     edge_feature = get_normed_edge_feature(fitsize_img)
 
+    edge_vis = (edge_feature + 0.5) * 255.0
+    edge_vis = edge_vis.astype(np.uint8)
+    cv2.imshow('edge_input', edge_vis)
+    cv2.waitKey()
+
     pose_net.blobs['image'].data[...] = input_data
     pose_output = pose_net.forward()
     pose_output = pose_output['net_output']
@@ -129,8 +134,13 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
     output = seg_net.forward()
     seg = output['seg_out'][0]
-
     seg = np.squeeze(seg)
+
+    seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    seg_heatmap = seg_heatmap.astype(np.uint8)
+    cv2.imshow('seg_heatmap', seg_heatmap)
+    cv2.waitKey()
+
     seg[seg > thresh] = person_label
     seg[seg != person_label] = 0
     seg = seg.astype(np.uint8)

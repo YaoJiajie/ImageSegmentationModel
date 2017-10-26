@@ -153,8 +153,9 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
         image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
                                                       mask_color[mask == person_label], 0.5, 0)
 
-    cv2.imshow('segmentation', image)
-    cv2.waitKey()
+    # cv2.imshow('segmentation', image)
+    # cv2.waitKey()
+    cv2.imwrite('seg.png', image)
 
 
 if __name__ == '__main__':

@@ -4,9 +4,9 @@ layer {
   name: "data"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
+    source: "/home/jiajie/data/person_instances_val2017_data"
     backend: LMDB
-    batch_size: 4
+    batch_size: 1
   }
   transform_param {
     scale: 0.00390625
@@ -21,9 +21,9 @@ layer {
   name: "pose_output"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/pose_val2017"
+    source: "/home/jiajie/data/pose_val2017"
     backend: LMDB
-    batch_size: 4
+    batch_size: 1
   }
   top: "pose_output"
 }
@@ -32,9 +32,9 @@ layer {
   name: "edge_feature"
   type: "Data"
   data_param {
-    source: "/media/datavolume2/jiajie/person_seg_data/edge_data_val2017"
+    source: "/home/jiajie/data/edge_data_val2017"
     backend: LMDB
-    batch_size: 4
+    batch_size: 1
   }
   top: "edge_feature"
 }
@@ -43,9 +43,9 @@ layer {
   name: "label"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_label"
+    source: "/home/jiajie/data/person_instances_val2017_label"
     backend: LMDB
-    batch_size: 4
+    batch_size: 1
   }
   top: "label"
 }

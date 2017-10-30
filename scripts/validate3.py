@@ -10,12 +10,12 @@ def validate(net, sample_num=2693, batch_size=4):
     while count < sample_num:
         output = net.forward()
         loss = output['loss']
+        loss = float(loss)
         mean_loss += loss
         count += batch_size
-        print(count)
+        print('loss = {:f}, count = {:d}'.format(loss, count))
         if count >= sample_num:
             break
-
     mean_loss /= count
     return mean_loss
 
@@ -44,3 +44,4 @@ def validate_all(seg_net_prototxt, weights_dir, interval=2000, max_iter=500000):
 
 if __name__ == '__main__':
     validate_all(sys.argv[1], sys.argv[2])
+

@@ -139,7 +139,7 @@ def create_lmdb(coco_images_path, annot_file, lmdb_dir):
 
 def create_pose_lmdb(openpose_prototxt, openpose_weights, output_lmdb_path, sample_num):
     caffe.set_mode_gpu()
-    caffe.set_device(1)
+    caffe.set_device(0)
     pose_net = caffe.Net(openpose_prototxt, openpose_weights, caffe.TEST)
     count = 0
     pose_lmdb = lmdb.open(output_lmdb_path, map_size=int(1e12))
@@ -154,6 +154,8 @@ def create_pose_lmdb(openpose_prototxt, openpose_weights, output_lmdb_path, samp
             datum = caffe.io.array_to_datum(pose_feature)
             pose_txn.put(db_key, datum.SerializeToString())
             count += 1
+
+            print(count)
 
             if count % 1000 == 0:
                 pose_txn.commit()
@@ -230,7 +232,22 @@ def create_edge_lmdb(bgr_lmdb_path, output_lmdb_path):
     print('Total {:d} samples being processed.'.format(count))
 
 
+def count_lmdb_sample_num(lmdb_path):
+    sample_lmdb = lmdb.open(lmdb_path)
+    sample_txn = sample_lmdb.begin()
+    sample_cursor = sample_txn.cursor()
+    count = 0
+
+    for _, _ in sample_cursor:
+        count += 1
+        print(count)
+
+    sample_lmdb.close()
+    print('Total {:d} samples.'.format(count))
+
+
 if __name__ == '__main__':
     # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
-    # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 64115)
+    # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 2693)
     create_edge_lmdb(sys.argv[1], sys.argv[2])
+    # count_lmdb_sample_num(sys.argv[1])

@@ -2,7 +2,7 @@ layer {
   name: "data"
   type: "Data"
   data_param {
-    source: "/media/datavolume/jiajie/person_segmentation/person_instances_train2017_data"
+    source: "/media/datavolume/jiajie/person_segmentation/person_instances_val2017_data"
     backend: LMDB
     batch_size: 2
   }

@@ -117,31 +117,31 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     edge_vis = edge_vis.astype(np.uint8)
     cv2.imshow('edge_input', edge_vis)
     cv2.waitKey()
-
+    
     pose_net.blobs['image'].data[...] = input_data
     pose_output = pose_net.forward()
-    pose_feature_vis = pose_net.blobs['concat_stage2'].data
-    pose_output = pose_output['net_output']
+    feature_layer = 'concat_stage3'
+    feature_layer = 'net_output'    
+    pose_feature = pose_net.blobs[feature_layer].data[:, :57]
 
     # sum all the pose channels and visualize
-    pose_output_sum = np.sum(pose_feature_vis[0], 0)
+    pose_output_sum = np.sum(pose_feature[0], 0)
     pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
     pose_output_sum = pose_output_sum.astype(np.uint8)
     pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
-    cv2.imshow('pose_output_sum', pose_output_sum)
-
+    cv2.imshow('pose feature from layer -- {:s}'.format(feature_layer), pose_output_sum)
+    
     seg_net.blobs['data'].data[...] = input_data
-    seg_net.blobs['pose_output'].data[...] = pose_output
+    seg_net.blobs['pose_output'].data[...] = pose_feature
     seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
     output = seg_net.forward()
     seg = output['seg_out'][0]
     seg = np.squeeze(seg)
-    
     seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
     seg_heatmap = seg_heatmap.astype(np.uint8)
     cv2.imshow('seg_heatmap', seg_heatmap)
     cv2.waitKey()
-
+    
     seg[seg > thresh] = person_label
     seg[seg != person_label] = 0
     seg = seg.astype(np.uint8)
@@ -153,7 +153,7 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     if np.count_nonzero(mask) > 0:
         image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
                                                       mask_color[mask == person_label], 0.5, 0)
-
+    
     # cv2.imshow('segmentation', image)
     # cv2.waitKey()
     cv2.imwrite('seg.png', image)

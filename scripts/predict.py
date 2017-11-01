@@ -120,12 +120,23 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     
     pose_net.blobs['image'].data[...] = input_data
     pose_output = pose_net.forward()
+    
     feature_layer = 'concat_stage3'
-    feature_layer = 'net_output'    
     pose_feature = pose_net.blobs[feature_layer].data[:, :57]
-
+    pose_feature_tmp = np.copy(pose_feature)
+    pose_feature[:, :19] = pose_feature_tmp[:, 38:]
+    pose_feature[:,19:] = pose_feature_tmp[:,:38]
+    
+    # feature_layer = 'net_output'
+    # pose_feature = pose_net.blobs[feature_layer].data[:, :57]
+    
+    output_feature = pose_output['net_output']
+    scale = output_feature / pose_feature 
+    print(np.mean(scale))
+    
     # sum all the pose channels and visualize
-    pose_output_sum = np.sum(pose_feature[0], 0)
+    #pose_output_sum = np.sum(pose_feature[0], 0)
+    pose_output_sum = pose_feature[0][38]
     pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
     pose_output_sum = pose_output_sum.astype(np.uint8)
     pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)

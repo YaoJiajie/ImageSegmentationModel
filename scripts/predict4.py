@@ -73,15 +73,19 @@ def predict_4(seg_net, image, thresh=0.5):
 
 
 if __name__ == '__main__':
-    seg_prototxt = sys.argv[1]
-    seg_weights = sys.argv[2]
-    image_path = sys.argv[3]
+    device = sys.argv[1]
+    seg_prototxt = sys.argv[2]
+    seg_weights = sys.argv[3]
+    image_path = sys.argv[4]
     
-    gpu_id = int(sys.argv[4])
-    thresh = float(sys.argv[5])
-    
-    caffe.set_mode_gpu()
-    caffe.set_device(gpu_id)
+    if device == 'gpu':
+        gpu_id = int(sys.argv[5])
+        thresh = float(sys.argv[6])
+        caffe.set_mode_gpu()
+        caffe.set_device(gpu_id)
+    else:
+        thresh = float(sys.argv[5])
+        
     seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
     img = cv2.imread(image_path)
     predict_4(seg_net, img, thresh)

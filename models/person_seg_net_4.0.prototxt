@@ -1212,8 +1212,8 @@ layer {
 layer {
   name: "concat_stage3"
   type: "Concat"
-  bottom: "Mconv7_stage2_L1"
   bottom: "Mconv7_stage2_L2"
+  bottom: "Mconv7_stage2_L1"
   top: "pose_output"
   concat_param {
     axis: 1

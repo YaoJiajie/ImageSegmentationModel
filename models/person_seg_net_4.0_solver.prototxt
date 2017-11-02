@@ -11,5 +11,6 @@ momentum: 0.9
 weight_decay: 0.0005
 
 snapshot: 2000
-snapshot_prefix: "backup/person_seg_net_4.1"
-solver_mode: CPU
+snapshot_prefix: "backup/person_seg_net_4.0"
+solver_mode: GPU
+

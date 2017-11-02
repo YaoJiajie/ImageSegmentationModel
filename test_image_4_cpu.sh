@@ -3,9 +3,10 @@
 model=$1
 weights=$2
 image_path=$3
-thres=$5
+thres=$4
 
-python scripts/predict4.py 'cpu'  ${pose_model}  ${pose_weights}  ${model}  ${weights}  ${image_path} ${thres}
+python scripts/predict4.py 'cpu' ${model}  ${weights}  ${image_path} ${thres}
+
 
 
 

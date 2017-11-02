@@ -6,6 +6,6 @@ image_path=$3
 gpu=$4
 thres=$5
 
-python scripts/predict4.py 'gpu'  ${pose_model}  ${pose_weights}  ${model}  ${weights}  ${image_path} ${gpu} ${thres}
+python scripts/predict4.py 'gpu' ${model}  ${weights}  ${image_path} ${gpu} ${thres}
 
 

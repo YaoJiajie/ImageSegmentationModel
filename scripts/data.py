@@ -246,8 +246,57 @@ def count_lmdb_sample_num(lmdb_path):
     print('Total {:d} samples.'.format(count))
 
 
+def resize_lmdb_image(in_lmdb_path, out_lmdb_path, rescale):
+
+    in_lmdb = lmdb.open(in_lmdb_path)
+    in_txn = in_lmdb.begin()
+    in_cursor = in_txn.cursor()
+    datum = caffe_pb2.Datum()
+    count = 0
+
+    out_lmdb = lmdb.open(out_lmdb_path, map_size=int(1e12))
+    out_txn = out_lmdb.begin(write=True)
+
+    for db_key, value in in_cursor:
+        datum.ParseFromString(value)
+        data = caffe.io.datum_to_array(datum)
+
+        im = data.astype(np.uint8)  # c * h * w
+        im = np.transpose(im, (1, 2, 0))
+        _, _, channels = im.shape
+
+        if channels == 1:
+            im = np.squeeze(im)
+
+        resized_im = cv2.resize(im, None, fx=rescale, fy=rescale, interpolation=cv2.INTER_CUBIC)
+        # cv2.imshow('image', im)
+        # cv2.imshow('image_resized', resized_im)
+        # cv2.waitKey()
+
+        if channels == 1:
+            resized_im = resized_im[np.newaxis, :, :]
+        else:
+            resized_im = np.transpose(resized_im, (2, 0, 1))
+
+        out_datum = caffe.io.array_to_datum(resized_im)
+        out_txn.put(db_key, out_datum.SerializeToString())
+        count += 1
+
+        if count % 1000 == 0:
+            out_txn.commit()
+            out_txn = out_lmdb.begin(write=True)
+            print('{:d} samples being processed.'.format(count))
+            sys.stdout.flush()
+
+    out_txn.commit()
+    out_lmdb.close()
+    in_lmdb.close()
+    print('Total {:d} samples being processed.'.format(count))
+
+
 if __name__ == '__main__':
     # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
     # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 2693)
-    create_edge_lmdb(sys.argv[1], sys.argv[2])
+    # create_edge_lmdb(sys.argv[1], sys.argv[2])
     # count_lmdb_sample_num(sys.argv[1])
+    resize_lmdb_image(sys.argv[1], sys.argv[2], 0.8)

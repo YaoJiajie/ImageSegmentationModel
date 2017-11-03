@@ -1211,6 +1211,7 @@ layer {
     axis: 1
   }
 }
+
 layer {
   name: "Mconv1_stage3_L1"
   type: "Convolution"

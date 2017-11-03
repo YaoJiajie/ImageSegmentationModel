@@ -125,7 +125,7 @@ def predict_3(pose_net, seg_net, image, thresh=0.5):
     pose_feature = pose_net.blobs[feature_layer].data[:, :57]
     pose_feature_tmp = np.copy(pose_feature)
     pose_feature[:, :19] = pose_feature_tmp[:, 38:]
-    pose_feature[:,19:] = pose_feature_tmp[:,:38]
+    pose_feature[:, 19:] = pose_feature_tmp[:,:38]
     
     # feature_layer = 'net_output'
     # pose_feature = pose_net.blobs[feature_layer].data[:, :57]

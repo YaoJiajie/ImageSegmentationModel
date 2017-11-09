@@ -176,6 +176,6 @@ if __name__ == '__main__':
         
     seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
     img = cv2.imread(image_path)
-    # predict_4(seg_net, img, thresh)
-    predict_4_1(seg_net, img, thresh)
+    predict_4(seg_net, img, thresh)
+    # predict_4_1(seg_net, img, thresh)
 

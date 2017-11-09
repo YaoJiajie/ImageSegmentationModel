@@ -10,7 +10,7 @@ max_input_width = 640
 
 
 def fit_size(image):
-        """
+    """
     If image's width or height is not multiples of 8,
     add padding to width or height, to make them multiples of 8.
     :param image: input image
@@ -19,7 +19,7 @@ def fit_size(image):
     h, w, c = image.shape
     assert c == 3
     pad_h, pad_w = 0, 0
-
+    
     remains = h % 8
     if remains != 0:
         pad_h = 8 - remains
@@ -85,12 +85,15 @@ def predict_5(seg_net, image, thresh=0.5, display=True):
         rescaled_image = image
         
     fit_size_image, pad_w, pad_h = fit_size(rescaled_image)
+    input_h, input_w, _ = fit_size_image.shape
+    seg_net.blobs['data'].reshape(1, 3, input_h, input_w)
+    seg_net.blobs['edge_feature'].reshape(1, 1, input_h, input_w)
     
     for _ in range(10):
         tic = time.time()
         input_data = convert(fit_size_image)
-        edge_feature = get_normed_edge_feature(fitsize_img)
-        seg_net.blobs['image'].data[...] = input_data
+        edge_feature = get_normed_edge_feature(fit_size_image)
+        seg_net.blobs['data'].data[...] = input_data
         seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
         output = seg_net.forward()
         toc = time.time()
@@ -98,7 +101,7 @@ def predict_5(seg_net, image, thresh=0.5, display=True):
     
     seg = output['seg_out'][0]
     seg = np.squeeze(seg)
-
+    
     if display:
         seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
         seg_heatmap = seg_heatmap.astype(np.uint8)

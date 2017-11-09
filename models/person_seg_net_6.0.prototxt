@@ -4,7 +4,7 @@ layer {
   data_param {
     source: "/media/datavolume3/jiajie/person_seg_data/person_instances_train2017_data"
     backend: LMDB
-    batch_size: 8
+    batch_size: 6
   }
   transform_param {
     scale: 0.00390625
@@ -21,7 +21,7 @@ layer {
   data_param {
     source: "/media/datavolume3/jiajie/person_seg_data/person_instances_train2017_edge"
     backend: LMDB
-    batch_size: 8
+    batch_size: 6
   }
   top: "edge_feature"
 }
@@ -32,7 +32,7 @@ layer {
   data_param {
     source: "/media/datavolume3/jiajie/person_seg_data/person_instances_train2017_label"
     backend: LMDB
-    batch_size: 8
+    batch_size: 6
   }
   top: "label"
 }

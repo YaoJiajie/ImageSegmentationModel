@@ -5,8 +5,8 @@ import sys
 import time
 
 person_label = 1
-max_input_height = 384
-max_input_width = 512
+max_input_height = 480
+max_input_width = 640
 
 
 def fit_size(image):
@@ -89,23 +89,35 @@ def predict(seg_net, image, thresh=0.5, display=True):
     seg_net.blobs['data'].reshape(1, 3, input_h, input_w)
     seg_net.blobs['edge_feature'].reshape(1, 1, input_h, input_w)
     
-    for _ in range(10):
-        tic = time.time()
+    for _ in range(3):
+        
         input_data = convert(fit_size_image)
         edge_feature = get_normed_edge_feature(fit_size_image)
         seg_net.blobs['data'].data[...] = input_data
         seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
+        tic = time.time()
         output = seg_net.forward()
         toc = time.time()
         print('seg time total = {:f}.'.format(toc - tic))
     
     seg = output['seg_out'][0]
     seg = np.squeeze(seg)
+
+    pose_output = seg_net.blobs['pose_output'].data
+    pose_output_sum = np.sum(pose_output[0], 0)
+    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    pose_output_sum = pose_output_sum.astype(np.uint8)
+    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
+    cv2.imshow('pose_output_sum', pose_output_sum)
+    cv2.imwrite('pose_heat_map.png', pose_output_sum)
+    cv2.waitKey()
+    
     
     if display:
         seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
         seg_heatmap = seg_heatmap.astype(np.uint8)
         cv2.imshow('seg_heatmap', seg_heatmap)
+        cv2.imwrite('seg_heatmap.png', seg_heatmap)
         cv2.waitKey()
     
     seg[seg > thresh] = person_label

@@ -103,14 +103,14 @@ def predict(seg_net, image, thresh=0.5, display=True):
     seg = output['seg_out'][0]
     seg = np.squeeze(seg)
 
-    pose_output = seg_net.blobs['pose_output'].data
-    pose_output_sum = np.sum(pose_output[0], 0)
-    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
-    pose_output_sum = pose_output_sum.astype(np.uint8)
-    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
-    cv2.imshow('pose_output_sum', pose_output_sum)
-    cv2.imwrite('pose_heat_map.png', pose_output_sum)
-    cv2.waitKey()
+    # pose_output = seg_net.blobs['concat_stage2'].data
+    # pose_output_sum = np.sum(pose_output[0], 0)
+    # pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    # pose_output_sum = pose_output_sum.astype(np.uint8)
+    # pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
+    # cv2.imshow('pose_output_sum', pose_output_sum)
+    # cv2.imwrite('pose_heat_map.png', pose_output_sum)
+    # cv2.waitKey()
     
     
     if display:

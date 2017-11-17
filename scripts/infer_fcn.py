@@ -57,8 +57,20 @@ if __name__ == '__main__':
     
     out[out > 0.5] = 255.0
     out[out <= 0.5] = 0.0
-    
     out = out.astype(np.uint8)
-    cv2.imshow('seg_result_fcn', out)
+
+
+    height, width = out.shape
+    mask = out
+    mask_color = np.zeros((height, width, 3), np.uint8)
+    mask_color[mask != 0] = [0, 255, 0]
+    
+    if np.count_nonzero(mask) > 0:
+        im[mask != 0] = cv2.addWeighted(im[mask != 0], 0.5, mask_color[mask != 0], 0.5, 0)
+    
+
+    cv2.imshow('segmentation', im)
     cv2.waitKey()
+    cv2.imwrite('seg_fcn.png', im)
+
 

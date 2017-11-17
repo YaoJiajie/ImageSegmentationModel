@@ -28,6 +28,8 @@ def evaluate(model_path, weights_path, sample_num, gpu_id=0):
             sum_iou += iou
             count += 1
             print(count)
+        print('current m-iou = {:f}'.format(sum_iou / count))
+        
     mean_iou = sum_iou / count
     print('Mean IOU = {:f}'.format(mean_iou))
 

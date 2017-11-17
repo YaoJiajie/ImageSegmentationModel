@@ -27,10 +27,11 @@ if __name__ == '__main__':
     cv2.waitKey()
     
     in_ = np.array(im, dtype=np.float32)
-    in_ /= 255.0
+    
     in_ -= np.array((94.3108,97.2271,107.083))
     in_ = in_.transpose((2,0,1))
     in_ = in_[np.newaxis, :, :, :]
+    in_ /= 255.0
     
     if use_gpu:
         caffe.set_mode_gpu()
@@ -52,10 +53,10 @@ if __name__ == '__main__':
     out = net_output['prob'][0]
     out = np.squeeze(out)
 
-    out = cv2.normalize(out, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    #out = cv2.normalize(out, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
     
-    #out[out > 0.5] = 255.0
-    #out[out <= 0.5] = 0.0
+    out[out > 0.5] = 255.0
+    out[out <= 0.5] = 0.0
     
     out = out.astype(np.uint8)
     cv2.imshow('seg_result_fcn', out)

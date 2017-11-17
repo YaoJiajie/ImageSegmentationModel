@@ -3,6 +3,9 @@ import numpy as np
 import cv2
 import sys
 import time
+import lmdb
+from caffe.proto import caffe_pb2
+
 
 person_label = 1
 max_input_height = 480
@@ -57,21 +60,6 @@ def convert(image):
     data = image.astype(np.float32)
     data = data[np.newaxis, :, :, :]
     return data
-
-
-def to_original_scale(seg, shape):
-    h, w = shape[0], shape[1]
-    if h == input_height and w == input_width:
-        return seg
-    h_ratio = input_height * 1.0 / h
-    w_ratio = input_width * 1.0 / w
-    ratio = min(h_ratio, w_ratio)
-    dst_h = int(h * ratio)
-    dst_w = int(w * ratio)
-    h_offset = (input_height - dst_h) / 2
-    w_offset = (input_width - dst_w) / 2
-    roi = seg[h_offset:h_offset + dst_h, w_offset:w_offset + dst_w]
-    return cv2.resize(roi, (w, h), interpolation=cv2.INTER_CUBIC)
 
 
 def predict(seg_net, image, thresh=0.5, display=True):
@@ -139,7 +127,7 @@ def predict(seg_net, image, thresh=0.5, display=True):
     if display:
         cv2.imshow('segmentation', image)
         cv2.waitKey()
-    cv2.imwrite('seg.png', image)
+        cv2.imwrite('seg.png', image)
 
 
 if __name__ == '__main__':

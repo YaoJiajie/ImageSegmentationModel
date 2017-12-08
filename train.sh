@@ -1,6 +1,6 @@
 #!/bin/bash
 
-caffe_root=/home/jiajie/openpose/3rdparty/caffe
+caffe_root=/home/jiajie/caffe
 
 version=$1
 weights=$2

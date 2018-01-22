@@ -8,8 +8,8 @@ from caffe.proto import caffe_pb2
 
 
 person_label = 1
-max_input_height = 480
-max_input_width = 640
+max_input_height = 120
+max_input_width = 160
 
 
 def fit_size(image):

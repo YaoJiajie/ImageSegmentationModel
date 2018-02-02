@@ -294,9 +294,142 @@ def resize_lmdb_image(in_lmdb_path, out_lmdb_path, rescale):
     print('Total {:d} samples being processed.'.format(count))
 
 
+def rotate_image(orig_img, angle):
+    # angle in degrees
+    image = np.copy(orig_img)
+    height, width = image.shape[:2]
+    image_center = (width/2, height/2)
+    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
+    rotated_img = cv2.warpAffine(image, rotation_mat, (width, height))
+
+    return rotated_img
+
+
+def process_rotate(in_lmdb, out_lmdb, rotate_deg, count):
+    in_txn = in_lmdb.begin()
+    in_cursor = in_txn.cursor()
+    datum = caffe_pb2.Datum()
+
+    out_txn = out_lmdb.begin(write=True)
+
+    for db_key, value in in_cursor:
+        datum.ParseFromString(value)
+        data = caffe.io.datum_to_array(datum)
+
+        im = data.astype(np.uint8)  # c * h * w
+        im = np.transpose(im, (1, 2, 0))
+        _, _, channels = im.shape
+
+        if channels == 1:
+            im = np.squeeze(im)
+
+        rotated_img = rotate_image(im, rotate_deg)
+
+        # cv2.imshow('image', im)
+        # cv2.imshow('image_resized', rotated_img)
+        # cv2.waitKey()
+
+        if channels == 1:
+            rotated_img = rotated_img[np.newaxis, :, :]
+        else:
+            rotated_img = np.transpose(rotated_img, (2, 0, 1))
+
+        out_datum = caffe.io.array_to_datum(rotated_img)
+        out_key = '{:0>12d}'.format(count)
+        out_txn.put(out_key, out_datum.SerializeToString())
+        count += 1
+
+        if count % 1000 == 0:
+            out_txn.commit()
+            out_txn = out_lmdb.begin(write=True)
+            print('{:d} samples being processed.'.format(count))
+            sys.stdout.flush()
+
+    out_txn.commit()
+    return count
+
+
+def flip_image(orig_img, flip_value):
+    # angle in degrees
+    image = np.copy(orig_img)
+    # flip_value = 0 (horizontal) 1(vertical) 2(both)
+    flip_img = cv2.flip(image, flip_value)
+
+    return flip_img
+
+
+def process_flip(in_lmdb, out_lmdb, flip_value, count):
+
+    in_txn = in_lmdb.begin()
+    in_cursor = in_txn.cursor()
+    datum = caffe_pb2.Datum()
+
+    out_txn = out_lmdb.begin(write=True)
+
+    for db_key, value in in_cursor:
+        datum.ParseFromString(value)
+        data = caffe.io.datum_to_array(datum)
+
+        im = data.astype(np.uint8)  # c * h * w
+        im = np.transpose(im, (1, 2, 0))
+        _, _, channels = im.shape
+
+        if channels == 1:
+            im = np.squeeze(im)
+
+        rotated_img = flip_image(im, flip_value)
+
+        # cv2.imshow('image', im)
+        # cv2.imshow('image_resized', rotated_img)
+        # cv2.waitKey()
+
+        if channels == 1:
+            rotated_img = rotated_img[np.newaxis, :, :]
+        else:
+            rotated_img = np.transpose(rotated_img, (2, 0, 1))
+
+        out_datum = caffe.io.array_to_datum(rotated_img)
+        out_key = '{:0>12d}'.format(count)
+        out_txn.put(out_key, out_datum.SerializeToString())
+        count += 1
+
+        if count % 1000 == 0:
+            out_txn.commit()
+            out_txn = out_lmdb.begin(write=True)
+            print('{:d} samples being processed.'.format(count))
+            sys.stdout.flush()
+
+    out_txn.commit()
+    return count
+
+
+def rotate_lmdb_image(in_lmdb_path, out_lmdb_path):
+
+    in_lmdb = lmdb.open(in_lmdb_path, readonly=True)
+    out_lmdb = lmdb.open(out_lmdb_path, map_size=int(1e12))
+
+    count = 0
+
+    # rotate 0, 45, 90, 135, 180, 225, 270
+    for rotate_deg in range(0, 360, 45):
+        print ('rotate_degree:{:d}'.format(rotate_deg))
+        count = process_rotate(in_lmdb, out_lmdb, rotate_deg, count)
+
+    # flip horizontal, vertical
+    for flip_value in range(0, 2):
+        print ('flip_value:{:d}'.format(flip_value))
+        count = process_flip(in_lmdb, out_lmdb, flip_value, count)
+
+    out_lmdb.close()
+    in_lmdb.close()
+    print('Total {:d} samples being processed.'.format(count))
+
+
 if __name__ == '__main__':
     # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
     # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 2693)
     # create_edge_lmdb(sys.argv[1], sys.argv[2])
     # count_lmdb_sample_num(sys.argv[1])
-    resize_lmdb_image(sys.argv[1], sys.argv[2], 0.8)
+    # resize_lmdb_image(sys.argv[1], sys.argv[2], 0.8)
+    rotate_lmdb_image(sys.argv[1], sys.argv[2])
+

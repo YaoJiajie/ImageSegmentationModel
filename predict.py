@@ -6,8 +6,8 @@ import time
 
 
 person_label = 1
-max_input_height = 384
-max_input_width = 512
+max_input_height = 480
+max_input_width = 640
 
 
 def fit_size(image):

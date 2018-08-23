@@ -1,4 +1,4 @@
-net: "person_seg_net_6.0.prototxt"
+net: "person_seg_net.prototxt"
 
 base_lr: 1e-2
 lr_policy: "step"

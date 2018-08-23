@@ -421,10 +421,11 @@ def rotate_lmdb_image(in_lmdb_path, out_lmdb_path):
 
 
 if __name__ == '__main__':
-    # create_lmdb(sys.argv[1], sys.argv[2], sys.argv[3])
-    # create_pose_lmdb(sys.argv[1], sys.argv[2], sys.argv[3], 2693)
-    # create_edge_lmdb(sys.argv[1], sys.argv[2])
-    # count_lmdb_sample_num(sys.argv[1])
-    # resize_lmdb_image(sys.argv[1], sys.argv[2], 0.8)
-    rotate_lmdb_image(sys.argv[1], sys.argv[2])
+    command = sys.argv[1]
+    if command == 'data':
+        create_lmdb(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif command == 'edge':
+        create_edge_lmdb(sys.argv[2], sys.argv[3])
+    else:
+        print('wrong command.')
 

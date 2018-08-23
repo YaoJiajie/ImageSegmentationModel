@@ -22,14 +22,12 @@ def validate(net, sample_num=2693, batch_size=1):
 
 def validate_all(seg_net_prototxt, weights_dir, interval=2000, max_iter=500000):
     caffe.set_mode_gpu()
-    caffe.set_device(0)
-    weights_format = 'person_seg_net_3.1_iter_{:d}.caffemodel'
+    weights_format = 'person_seg_net_iter_{:d}.caffemodel'
     iters = []
     losses = []
     output_file = open('validate.txt', 'w')
-
     net = None
-    
+
     for iter_idx in range(0, max_iter, interval):
         weights_path = weights_format.format(iter_idx)
         weights_path = os.path.join(weights_dir, weights_path)
@@ -52,4 +50,3 @@ def validate_all(seg_net_prototxt, weights_dir, interval=2000, max_iter=500000):
 
 if __name__ == '__main__':
     validate_all(sys.argv[1], sys.argv[2])
-

@@ -2,6 +2,7 @@ import caffe
 import sys
 
 
+# Used to create init weights for training (copy open-pose's weights to our network)
 def surgery(open_pose_weights, person_seg_net_prototxt):
     caffe.set_mode_cpu()
     person_seg_net = caffe.Net(person_seg_net_prototxt, open_pose_weights, caffe.TRAIN)

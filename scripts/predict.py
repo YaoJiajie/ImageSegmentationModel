@@ -1,16 +1,57 @@
 import caffe
 import numpy as np
-from data import fit_size
-from data import input_height
-from data import input_width
-from data import person_label
-from data import get_normed_edge_feature
 import cv2
 import sys
+import time
+
+
+person_label = 1
+max_input_height = 384
+max_input_width = 512
+
+
+def fit_size(image):
+    """
+    If image's width or height is not multiples of 8,
+    add padding to width or height, to make them multiples of 8.
+    :param image: input image
+    :return: output_image, pad_width, pad_height
+    """
+    h, w, c = image.shape
+    assert c == 3
+    pad_h, pad_w = 0, 0
+    
+    remains = h % 8
+    if remains != 0:
+        pad_h = 8 - remains
+
+    remains = w % 8
+    if remains != 0:
+        pad_w = 8 - remains
+            
+    if pad_h == 0 and pad_w == 0:
+        return image, 0, 0
+            
+    new_h = h + pad_h
+    new_w = w + pad_w
+    padded_image = np.zeros((new_h, new_w, c), image.dtype)
+    padded_image[:h, :w, :] = image
+    return padded_image, pad_w, pad_h
+
+
+def get_normed_edge_feature(im):
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    grad_x = cv2.Sobel(im, cv2.CV_32F, 1, 0, None, 3)
+    grad_x = np.abs(grad_x)
+    grad_y = cv2.Sobel(im, cv2.CV_32F, 0, 1, None, 3)
+    grad_y = np.abs(grad_y)
+    total_grad = cv2.addWeighted(grad_x, 0.5, grad_y, 0.5, 0)
+    total_grad = cv2.normalize(total_grad, None, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX)
+    total_grad -= 0.5
+    return total_grad
 
 
 def convert(image):
-    image = fit_size([image, ])[0]
     image = image / 256.0
     image = image - 0.5
     image = np.transpose(image, (2, 0, 1))
@@ -19,190 +60,79 @@ def convert(image):
     return data
 
 
-def to_original_scale(seg, shape):
-    h, w = shape[0], shape[1]
-    if h == input_height and w == input_width:
-        return seg
-    h_ratio = input_height * 1.0 / h
-    w_ratio = input_width * 1.0 / w
-    ratio = min(h_ratio, w_ratio)
-    dst_h = int(h * ratio)
-    dst_w = int(w * ratio)
-    h_offset = (input_height - dst_h) / 2
-    w_offset = (input_width - dst_w) / 2
-    roi = seg[h_offset:h_offset + dst_h, w_offset:w_offset + dst_w]
-    return cv2.resize(roi, (w, h), interpolation=cv2.INTER_CUBIC)
-
-
-def predict(net, image, thresh=0.5):
+def predict(seg_net, image, thresh=0.5, display=True):
     original_height, original_width, _ = image.shape
-    input_data = convert(image)
-    net.blobs['data'].data[...] = input_data
-    output = net.forward()
+    if original_height > max_input_height or original_width > max_input_width:
+        h_ratio = max_input_height * 1.0 / original_height
+        w_ratio = max_input_width * 1.0 / original_width
+        ratio = min(h_ratio, w_ratio)
+        rescaled_image = cv2.resize(image, None, fx=ratio, fy=ratio)
+    else:
+        rescaled_image = image
+    
+    fit_size_image, pad_w, pad_h = fit_size(rescaled_image)
+    input_h, input_w, _ = fit_size_image.shape
+    seg_net.blobs['data'].reshape(1, 3, input_h, input_w)
+    seg_net.blobs['edge_feature'].reshape(1, 1, input_h, input_w)
+
+    input_data = convert(fit_size_image)
+    edge_feature = get_normed_edge_feature(fit_size_image)
+    seg_net.blobs['data'].data[...] = input_data
+    seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
+    # tic = time.time()
+    output = seg_net.forward()
+    # toc = time.time()
+    # print('seg time total = {:f}.'.format(toc - tic))
+
     seg = output['seg_out'][0]
-
-    # # display the pose heat map
-    # pose_output = net.blobs['pose_output_8x'].data[0]
-    # channels, _, _ = pose_output.shape
-    # for ch in range(channels):
-    #     heat_map = pose_output[ch]
-    #     heat_map_normed = cv2.normalize(heat_map, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-    #     heat_map_vis = heat_map_normed.astype(np.uint8)
-    #     cv2.imshow('heatmap', heat_map_vis)
-    #     cv2.waitKey()
-
     seg = np.squeeze(seg)
+
+    # Debug functions
+    # pose_output = seg_net.blobs['concat_stage2'].data
+    # pose_output_sum = np.sum(pose_output[0], 0)
+    # pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    # pose_output_sum = pose_output_sum.astype(np.uint8)
+    # pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
+    # cv2.imshow('pose_output_sum', pose_output_sum)
+    # cv2.imwrite('pose_heat_map.png', pose_output_sum)
+    # cv2.waitKey()
+    # if display:
+    #     seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
+    #     seg_heatmap = seg_heatmap.astype(np.uint8)
+    #     cv2.imshow('seg_heatmap', seg_heatmap)
+    #     cv2.imwrite('seg_heatmap.png', seg_heatmap)
+    #     cv2.waitKey()
+    
     seg[seg > thresh] = person_label
     seg[seg != person_label] = 0
     seg = seg.astype(np.uint8)
 
-    mask = to_original_scale(seg, (original_height, original_width))
+    if pad_h > 0:
+        seg = seg[:-pad_h, :]
+    if pad_w > 0:
+        seg = seg[:, :-pad_w]
+
+    mask = cv2.resize(seg, (original_width, original_height))
     mask_color = np.zeros((original_height, original_width, 3), np.uint8)
     mask_color[mask == person_label] = [0, 255, 0]
 
     if np.count_nonzero(mask) > 0:
         image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5, mask_color[mask == person_label], 0.5, 0)
-
-    cv2.imshow('segmentation', image)
-    cv2.waitKey()
-
-
-def predict_2(pose_net, seg_net, image, thresh=0.5):
-    original_height, original_width, _ = image.shape
-    input_data = convert(image)
-
-    pose_net.blobs['image'].data[...] = input_data
-    pose_output = pose_net.forward()
-    pose_output = pose_output['net_output']
-
-    # sum all the pose channels and visualize
-    pose_output_sum = np.sum(pose_output[0], 0)
-    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
-    pose_output_sum = pose_output_sum.astype(np.uint8)
-    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
-    cv2.imshow('pose_output_sum', pose_output_sum)
-
-    seg_net.blobs['data'].data[...] = input_data
-    seg_net.blobs['pose_output'].data[...] = pose_output
-    output = seg_net.forward()
-    seg = output['seg_out'][0]
-
-    seg = np.squeeze(seg)
-    seg[seg > thresh] = person_label
-    seg[seg != person_label] = 0
-    seg = seg.astype(np.uint8)
-
-    mask = to_original_scale(seg, (original_height, original_width))
-    mask_color = np.zeros((original_height, original_width, 3), np.uint8)
-    mask_color[mask == person_label] = [0, 255, 0]
-
-    if np.count_nonzero(mask) > 0:
-        image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
-                                                      mask_color[mask == person_label], 0.5, 0)
-
-    cv2.imshow('segmentation', image)
-    cv2.waitKey()
-
-
-def predict_3(pose_net, seg_net, image, thresh=0.5):
-    original_height, original_width, _ = image.shape
-    input_data = convert(image)
-
-    fitsize_img = fit_size([image, ])[0]
-    cv2.imshow('fitsized_img', fitsize_img)
-    cv2.waitKey()
-    edge_feature = get_normed_edge_feature(fitsize_img)
-
-    edge_vis = (edge_feature + 0.5) * 255.0
-    edge_vis = edge_vis.astype(np.uint8)
-    cv2.imshow('edge_input', edge_vis)
-    cv2.waitKey()
     
-    pose_net.blobs['image'].data[...] = input_data
-    pose_output = pose_net.forward()
-    
-    feature_layer = 'concat_stage3'
-    pose_feature = pose_net.blobs[feature_layer].data[:, :57]
-    pose_feature_tmp = np.copy(pose_feature)
-    pose_feature[:, :19] = pose_feature_tmp[:, 38:]
-    pose_feature[:, 19:] = pose_feature_tmp[:,:38]
-    
-    # feature_layer = 'net_output'
-    # pose_feature = pose_net.blobs[feature_layer].data[:, :57]
-    
-    output_feature = pose_output['net_output']
-    scale = output_feature / pose_feature 
-    print(np.mean(scale))
-    
-    # sum all the pose channels and visualize
-    #pose_output_sum = np.sum(pose_feature[0], 0)
-    pose_output_sum = pose_feature[0][38]
-    pose_output_sum = cv2.normalize(pose_output_sum, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
-    pose_output_sum = pose_output_sum.astype(np.uint8)
-    pose_output_sum = cv2.resize(pose_output_sum, None, None, fx=8, fy=8)
-    cv2.imshow('pose feature from layer -- {:s}'.format(feature_layer), pose_output_sum)
-    
-    seg_net.blobs['data'].data[...] = input_data
-    seg_net.blobs['pose_output'].data[...] = pose_feature
-    seg_net.blobs['edge_feature'].data[...] = edge_feature[np.newaxis, np.newaxis, :, :]
-    output = seg_net.forward()
-    seg = output['seg_out'][0]
-    seg = np.squeeze(seg)
-    seg_heatmap = cv2.normalize(seg, None, alpha=0.0, beta=255.0, norm_type=cv2.NORM_MINMAX)
-    seg_heatmap = seg_heatmap.astype(np.uint8)
-    cv2.imshow('seg_heatmap', seg_heatmap)
-    cv2.waitKey()
-    
-    seg[seg > thresh] = person_label
-    seg[seg != person_label] = 0
-    seg = seg.astype(np.uint8)
-
-    mask = to_original_scale(seg, (original_height, original_width))
-    mask_color = np.zeros((original_height, original_width, 3), np.uint8)
-    mask_color[mask == person_label] = [0, 255, 0]
-
-    if np.count_nonzero(mask) > 0:
-        image[mask == person_label] = cv2.addWeighted(image[mask == person_label], 0.5,
-                                                      mask_color[mask == person_label], 0.5, 0)
-    
-    # cv2.imshow('segmentation', image)
-    # cv2.waitKey()
-    cv2.imwrite('seg.png', image)
+    if display:
+        cv2.imshow('segmentation', image)
+        cv2.waitKey()
+        cv2.imwrite('seg.png', image)
 
 
 if __name__ == '__main__':
-    ver = sys.argv[1]
+    caffe.set_mode_gpu()
 
-    if ver == '1':
-        net_prototxt = sys.argv[2]
-        weights = sys.argv[3]
-        image_path = sys.argv[4]
-        gpu_id = int(sys.argv[5])
-        thresh = float(sys.argv[6])
-
-        caffe.set_mode_gpu()
-        caffe.set_device(gpu_id)
-        caffe_net = caffe.Net(net_prototxt, weights, caffe.TEST)
-        img = cv2.imread(image_path)
-        predict(caffe_net, img, thresh)
-
-    elif ver == '2' or ver == '3':
-        pose_prototxt = sys.argv[2]
-        pose_weights = sys.argv[3]
-        seg_prototxt = sys.argv[4]
-        seg_weights = sys.argv[5]
-        image_path = sys.argv[6]
-        gpu_id = int(sys.argv[7])
-        thresh = float(sys.argv[8])
-
-        caffe.set_mode_gpu()
-        caffe.set_device(gpu_id)
-        pose_net = caffe.Net(pose_prototxt, pose_weights, caffe.TEST)
-        seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
-        img = cv2.imread(image_path)
-
-        if ver == '2':
-            predict_2(pose_net, seg_net, img, thresh)
-        else:
-            predict_3(pose_net, seg_net, img, thresh)
-
+    seg_prototxt = sys.argv[2]
+    seg_weights = sys.argv[3]
+    image_path = sys.argv[4]
+    thresh = float(sys.argv[5])
+        
+    seg_net = caffe.Net(seg_prototxt, seg_weights, caffe.TEST)
+    img = cv2.imread(image_path)
+    predict(seg_net, img, thresh)

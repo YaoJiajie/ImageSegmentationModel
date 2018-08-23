@@ -2,8 +2,8 @@ import sys
 import os
 import numpy as np
 import cv2
-from coco_api.pycocotools.coco import COCO
-from coco_api.pycocotools import mask as mask_utils
+from pycocotools.coco import COCO
+from pycocotools import mask as mask_utils
 import lmdb
 import caffe
 from caffe.proto import caffe_pb2
@@ -46,14 +46,10 @@ def parse_annot(coco, image_path, annots):
         label_image[m != 0] = person_label
 
     image, label_image = fit_size([image, label_image])
-
-    # cv2.imshow('image', image)
-    # cv2.imshow('label', label_image)
-    # cv2.waitKey()
-
     return image, label_image
 
 
+# create letter box image, like YOLO-V2
 def fit_size(images):
     h, w, _ = images[0].shape
     if h == input_height and w == input_width:
@@ -66,7 +62,6 @@ def fit_size(images):
     new_h = int(h * ratio)
     new_w = int(w * ratio)
     new_imgs = []
-    # print('{:d},{:d} --> {:d},{:d}'.format(h, w, new_h, new_w))
 
     for img in images:
         if len(img.shape) == 2:

@@ -1,4 +1,4 @@
-net: "person_seg_net_7.0.prototxt"
+net: "person_seg_net_6.0.prototxt"
 
 base_lr: 1e-2
 lr_policy: "step"
@@ -11,7 +11,7 @@ momentum: 0.9
 weight_decay: 0.0005
 
 snapshot: 2000
-snapshot_prefix: "backup/person_seg_net_7.0"
+snapshot_prefix: "backup/person_seg_net"
 solver_mode: GPU
 
 

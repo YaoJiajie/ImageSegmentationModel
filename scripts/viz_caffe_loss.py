@@ -1,7 +1,6 @@
 import re
 import sys
 from matplotlib import pyplot as plt
-import matplotlib
 import math
 
 regrex_batch = re.compile(r'Iteration (\d+) \((\d+\.\d+) iter/s, (\d+\.\d+)s/\d+ iters\), loss = (\d+\.\d+)')
@@ -41,7 +40,6 @@ def viz(log_file, log_loss=False):
     plt.ylabel('loss')
     plt.title('loss')
     plt.show()
-    # plt.savefig('loss.png')
 
 
 if __name__ == '__main__':

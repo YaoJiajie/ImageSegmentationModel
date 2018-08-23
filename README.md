@@ -32,7 +32,7 @@
         $ python data.py edge  <path_to_train_bgr_lmdb>  <path_to_output_train_edge_lmdb>
         $ python data.py edge  <path_to_val_bgr_lmdb>   <path_to_output_val_edge_lmdb>
 
-## Traing
+## Training
 
     1. Download OpenPose weights.
 
